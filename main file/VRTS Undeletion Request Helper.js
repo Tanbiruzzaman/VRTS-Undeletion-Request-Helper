@@ -65,7 +65,10 @@
                                 onload: function(editResponse) {
                                     var result = JSON.parse(editResponse.responseText);
                                     if (result.edit && result.edit.result === 'Success') {
-                                        alert('Undeletion request added successfully.');
+                                        // Construct the thank you message with a link to the request
+                                        var requestSection = encodeURIComponent(`[[:${fileName}]]`);
+                                        var thankYouMessage = `Undeleting request submitted (see the request [https://commons.wikimedia.org/wiki/${pageTitle}#${requestSection}]).`;
+                                        alert(thankYouMessage);
                                     } else {
                                         alert('Error adding the undeletion request.');
                                     }
