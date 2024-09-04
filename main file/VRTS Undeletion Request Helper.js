@@ -1,7 +1,7 @@
 // VRTS Undeletion Request Helper
 // A script to request undeletion of files on Wikimedia Commons, available only for VRT permissions agents.
 // https://commons.wikimedia.org/wiki/*
-// Adapted from https://github.com/Tanbiruzzaman/VRTS-Undeletion-Request-Helper/*
+// Adapted from: https://github.com/Tanbiruzzaman/VRTS-Undeletion-Request-Helper/
 
 (function() {
     'use strict';
@@ -21,15 +21,60 @@
         // Ensure both file name and ticket number are provided
         if (fileName && ticketNumber) {
             // Format the undeletion request
-            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].~~~~`;
+            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].~~~~\n`;
 
             // Format the edit summary
             var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}).`;
 
-            // Redirect to the correct undeletion request page with the preloaded request text and edit summary
-            var url = '/wiki/Commons:Undeletion_requests/Current_requests';
-            var editPageUrl = `${url}?action=edit&preloadtitle=${encodeURIComponent(fileName)}&preload=Template:Undeletion_request&preloadparams=${encodeURIComponent(requestText)}&summary=${encodeURIComponent(editSummary)}`;
-            window.location.href = editPageUrl;
+            // Fetch the current content of the page
+            var pageTitle = 'Commons:Undeletion_requests/Current_requests';
+            var apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&prop=revisions&titles=${encodeURIComponent(pageTitle)}&rvprop=content&format=json`;
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: apiUrl,
+                onload: function(response) {
+                    var data = JSON.parse(response.responseText);
+                    var page = data.query.pages[Object.keys(data.query.pages)[0]];
+                    var existingContent = page.revisions[0]['*'];
+                    var newContent = existingContent + requestText;
+
+                    // Prepare the API request to save the updated content
+                    var csrfUrl = 'https://commons.wikimedia.org/w/api.php?action=query&meta=tokens&type=edit&format=json';
+                    GM_xmlhttpRequest({
+                        method: 'GET',
+                        url: csrfUrl,
+                        onload: function(csrfResponse) {
+                            var csrfData = JSON.parse(csrfResponse.responseText);
+                            var csrfToken = csrfData.query.tokens.csrftoken;
+                            var editUrl = 'https://commons.wikimedia.org/w/api.php';
+                            var editData = {
+                                action: 'edit',
+                                title: pageTitle,
+                                text: newContent,
+                                summary: editSummary,
+                                token: csrfToken,
+                                format: 'json'
+                            };
+
+                            GM_xmlhttpRequest({
+                                method: 'POST',
+                                url: editUrl,
+                                data: $.param(editData),
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                onload: function(editResponse) {
+                                    var result = JSON.parse(editResponse.responseText);
+                                    if (result.edit && result.edit.result === 'Success') {
+                                        alert('Undeletion request added successfully.');
+                                    } else {
+                                        alert('Error adding the undeletion request.');
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         } else {
             alert('File name and ticket number are required!');
         }
