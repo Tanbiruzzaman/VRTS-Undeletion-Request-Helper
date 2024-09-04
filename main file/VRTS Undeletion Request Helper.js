@@ -1,7 +1,7 @@
 // VRTS Undeletion Request Helper
 // A script to request undeletion of files on Wikimedia Commons, available only for VRT permissions agents.
 // https://commons.wikimedia.org/wiki/*
-// Adapted from: https://github.com/Tanbiruzzaman/VRTS-Undeletion-Request-Helper/
+// Imported from: https://github.com/Tanbiruzzaman/VRTS-Undeletion-Request-Helper/
 
 (function() {
     'use strict';
