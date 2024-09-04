@@ -26,8 +26,8 @@
             // Format the edit summary
             var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}).`;
 
-            // Redirect to the undeletion request page with the preloaded request text and edit summary
-            var url = '/wiki/Commons:Undeletion_requests';
+            // Redirect to the correct undeletion request page with the preloaded request text and edit summary
+            var url = '/wiki/Commons:Undeletion_requests/Current_requests';
             var editPageUrl = `${url}?action=edit&preloadtitle=${encodeURIComponent(fileName)}&preload=Template:Undeletion_request&preloadparams=${encodeURIComponent(requestText)}&summary=${encodeURIComponent(editSummary)}`;
             window.location.href = editPageUrl;
         } else {
