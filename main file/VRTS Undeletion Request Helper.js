@@ -4,37 +4,40 @@
 // version      1.0
 // description  A script to request undeletion of files on Wikimedia Commons, available only for VRT permissions agents.
 // author       Tanbiruzzaman
-// match        https://commons.wikimedia.org/wiki/Commons:Undeletion_requests/Current_requests
+// match        https://commons.wikimedia.org/*
 // grant        mw.Api
 // grant        mw.loader.using
 // grant        mw.user.options.get
+// run-at       document-idle
 // require      https://code.jquery.com/jquery-3.6.0.min.js
 // commons      https://commons.wikimedia.org/wiki/User:Tanbiruzzaman/VRTS_Undeletion_Request_Helper
 
 (function() {
     'use strict';
 
-    function checkUserGroup(callback) {
-        mw.loader.using('mediawiki.api', function() {
-            new mw.Api().get({
-                meta: 'globaluserinfo',
-                guiuser: mw.config.get('wgUserName'),
-                guiprop: 'groups'
-            }).done(function(data) {
-                var userGroups = data.query.globaluserinfo.groups;
-                if (userGroups.includes('vrt-permissions')) {
-                    callback(true);
-                } else {
-                    alert('You do not have the required permissions to use this script.');
+    // Function to check if the user is a member of the vrt-permissions global group
+    function checkGlobalUserGroup(callback) {
+        mw.loader.using(['mediawiki.api'], function() {
+            if ($.inArray('vrt-permissions', mw.config.get('wgGlobalGroups')) > -1 || $.inArray('sysop', mw.config.get('wgUserGroups')) > -1) {
+                callback(true);
+            } else {
+                new mw.Api().get({
+                    meta: 'globaluserinfo',
+                    guiuser: mw.config.get('wgUserName'),
+                    guiprop: 'groups'
+                }).done(function(data) {
+                    var userGroups = data.query.globaluserinfo.groups;
+                    var isMember = $.inArray('vrt-permissions', userGroups) > -1;
+                    callback(isMember);
+                }).fail(function() {
+                    console.error('API request failed');
                     callback(false);
-                }
-            }).fail(function() {
-                alert('Failed to check user groups.');
-                callback(false);
-            });
+                });
+            }
         });
     }
 
+    // Function to prompt the user for input and submit the request
     function requestUndeletion() {
         // Prompt user for file name and ticket number
         var fileName = prompt('Enter the file name (e.g., File:Example.jpg):');
@@ -52,15 +55,15 @@
         console.log('File Name:', fileName);
         console.log('Ticket Number:', ticketNumber);
 
-        // Format the undeletion request with split ~~~~
-        var requestText = `\n\n== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. \n~~\n~~\n`;
+        // Format the undeletion request with nowiki tag around the signature
+        var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].\n~~\n~~\n`;
 
-        // Edit summary with VRTURH link
+        // Format the edit summary
         var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}). ([[User:Tanbiruzzaman/VRTS Undeletion Request Helper|VRTURH]])`;
 
         var pageTitle = 'Commons:Undeletion_requests/Current_requests';
 
-        // Get CSRF token
+        // Make a request to get the CSRF token
         new mw.Api().get({
             action: 'query',
             meta: 'tokens',
@@ -87,17 +90,27 @@
         });
     }
 
-    // Check user group and add button if authorized
-    checkUserGroup(function(isAuthorized) {
-        if (isAuthorized) {
-            // Add a button to the page to trigger the requestUndeletion function
-            $(document).ready(function() {
-                $('<button>')
-                    .text('Request Undeletion')
-                    .attr('id', 'requestUndeletionButton')
-                    .on('click', requestUndeletion)
-                    .appendTo('#p-cactions .bodyContent');
-            });
-        }
-    });
+    // Add a button to the interface for triggering the script
+    function addButton() {
+        checkGlobalUserGroup(function(isMember) {
+            if (isMember) {
+                var toolbar = document.querySelector('#p-cactions > .vector-menu-content');
+                if (toolbar) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.textContent = 'Request Undeletion';
+                    a.style.cursor = 'pointer';
+                    a.addEventListener('click', requestUndeletion);
+                    li.appendChild(a);
+                    toolbar.appendChild(li);
+                }
+            } else {
+                console.log('User is not a member of the vrt-permissions group.');
+            }
+        });
+    }
+
+    // Load the button on the page
+    mw.loader.using(['mediawiki.api'], addButton);
+
 })();
