@@ -21,19 +21,15 @@ function requestUndeletion() {
     console.log('File Name:', fileName);
     console.log('Ticket Number:', ticketNumber);
 
-    // Determine the correct signature based on user settings
-    var uSig = ( mw.user.options.get( 'fancysig' ) && mw.user.options.get( 'nickname' ).search( /^[ ']*\[\[/ ) ) ?
-        ' ' : ' --';
+    // Format the undeletion request with split ~~~~ 
+    var requestText = `\n== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. \n~~\n~~\n`;
 
-    // Format the undeletion request with ~~~~ for signature and timestamp
-    var requestText = `\n== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].` + uSig + '~~~~\n';
-
-    // Format the edit summary with VRTURH link
+    // Edit summary with VRTURH link
     var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}). ([[User:Tanbiruzzaman/VRTS Undeletion Request Helper|VRTURH]])`;
 
     var pageTitle = 'Commons:Undeletion_requests/Current_requests';
 
-    // Make a request to get the CSRF token
+    // Get CSRF token
     new mw.Api().get({
         action: 'query',
         meta: 'tokens',
