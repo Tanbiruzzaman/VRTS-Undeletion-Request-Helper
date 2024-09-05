@@ -21,8 +21,8 @@
                     var userGroups = data.query.globaluserinfo.groups;
                     var isMember = $.inArray('vrt-permissions', userGroups) > -1;
                     callback(isMember);
-                }).fail(function(code, response) {
-                    console.error('API request failed:', code, response);
+                }).fail(function() {
+                    console.error('API request failed');
                     callback(false);
                 });
             }
@@ -47,77 +47,38 @@
         console.log('File Name:', fileName);
         console.log('Ticket Number:', ticketNumber);
 
-        // Format the undeletion request with <nowiki> tags around ~~~~
-        var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. <nowiki>~~~~</nowiki>\n`;
+        // Format the undeletion request
+        var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. ~~~~\n`;
 
         // Format the edit summary
         var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}).`;
 
-        // Fetch the current content of the page
         var pageTitle = 'Commons:Undeletion_requests/Current_requests';
-        var apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&prop=revisions&titles=${encodeURIComponent(pageTitle)}&rvprop=content&format=json`;
 
-        GM_xmlhttpRequest({
-            method: 'GET',
-            url: apiUrl,
-            onload: function(response) {
-                var data = JSON.parse(response.responseText);
-                var page = data.query.pages[Object.keys(data.query.pages)[0]];
-                var existingContent = page.revisions[0]['*'];
+        // Make a request to get the CSRF token
+        new mw.Api().get({
+            action: 'query',
+            meta: 'tokens',
+            type: 'csrf'
+        }).done(function(data) {
+            var csrfToken = data.query.tokens.csrftoken;
 
-                // Remove <nowiki> tags around ~~~~ before submitting
-                var newContent = existingContent + requestText.replace(/<nowiki>/g, '').replace(/<\/nowiki>/g, '');
-
-                console.log('New Content:', newContent);
-
-                // Prepare the API request to save the updated content
-                var csrfUrl = 'https://commons.wikimedia.org/w/api.php?action=query&meta=tokens&type=edit&format=json';
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: csrfUrl,
-                    onload: function(csrfResponse) {
-                        var csrfData = JSON.parse(csrfResponse.responseText);
-                        var csrfToken = csrfData.query.tokens.csrftoken;
-                        var editUrl = 'https://commons.wikimedia.org/w/api.php';
-                        var editData = {
-                            action: 'edit',
-                            title: pageTitle,
-                            text: newContent,
-                            summary: editSummary,
-                            token: csrfToken,
-                            format: 'json'
-                        };
-
-                        GM_xmlhttpRequest({
-                            method: 'POST',
-                            url: editUrl,
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            data: $.param(editData),
-                            onload: function(editResponse) {
-                                var result = JSON.parse(editResponse.responseText);
-                                if (result.edit && result.edit.result === 'Success') {
-                                    // Construct the thank you message with a link to the request
-                                    var requestSection = encodeURIComponent(`[[:${fileName}]]`);
-                                    var thankYouMessage = `Undeleting request submitted (see the request [https://commons.wikimedia.org/wiki/${pageTitle}#${requestSection}]).`;
-                                    alert(thankYouMessage);
-                                } else {
-                                    alert('Error adding the undeletion request.');
-                                    console.error('Edit response:', result);
-                                }
-                            },
-                            onerror: function() {
-                                alert('Failed to submit the undeletion request.');
-                            }
-                        });
-                    },
-                    onerror: function() {
-                        alert('Failed to get CSRF token.');
-                    }
-                });
-            },
-            onerror: function() {
-                alert('Failed to fetch the current undeletion requests page.');
-            }
+            // Make the edit request to update the undeletion request page
+            new mw.Api().postWithToken('csrf', {
+                action: 'edit',
+                title: pageTitle,
+                appendtext: requestText,
+                summary: editSummary
+            }).done(function() {
+                // Success message with link to the undeletion request
+                var requestSection = encodeURIComponent(`[[:${fileName}]]`);
+                var thankYouMessage = `Undeleting request submitted (see the request [https://commons.wikimedia.org/wiki/${pageTitle}#${requestSection}]).`;
+                alert(thankYouMessage);
+            }).fail(function() {
+                alert('Failed to submit the undeletion request.');
+            });
+        }).fail(function() {
+            alert('Failed to get CSRF token.');
         });
     }
 
@@ -141,13 +102,7 @@
         });
     }
 
-    // Load jQuery and then add the button
-    function loadjQuery(callback) {
-        var script = document.createElement('script');
-        script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-        script.onload = callback;
-        document.head.appendChild(script);
-    }
+    // Load the button on the page
+    mw.loader.using(['mediawiki.api'], addButton);
 
-    loadjQuery(addButton);
 })();
