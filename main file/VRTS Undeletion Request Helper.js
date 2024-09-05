@@ -6,10 +6,12 @@
 (function() {
     'use strict';
 
-    // Function to check if the user is in the "vrt-permissions" global group
-    function isVRTAgent() {
-        var userGroups = mw.config.get('wgUserGroups');
-        return userGroups.includes('vrt-permissions');
+    // Function to dynamically load jQuery
+    function loadjQuery(callback) {
+        var script = document.createElement('script');
+        script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+        script.onload = callback;
+        document.head.appendChild(script);
     }
 
     // Function to prompt the user for input
@@ -21,7 +23,7 @@
         // Ensure both file name and ticket number are provided
         if (fileName && ticketNumber) {
             // Format the undeletion request
-            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].~~~~\n`;
+            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].–[[User:Tanbiruzzaman|'''<span style="color:darkgrey;font-family:monospace">TANBIRUZZAMAN</span>''']] ([[User talk:Tanbiruzzaman|&#128172;]]) 00:18, 5 September 2024 (UTC)\n`;
 
             // Format the edit summary
             var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}).`;
@@ -30,22 +32,18 @@
             var pageTitle = 'Commons:Undeletion_requests/Current_requests';
             var apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&prop=revisions&titles=${encodeURIComponent(pageTitle)}&rvprop=content&format=json`;
 
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: apiUrl,
-                onload: function(response) {
-                    var data = JSON.parse(response.responseText);
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
                     var page = data.query.pages[Object.keys(data.query.pages)[0]];
                     var existingContent = page.revisions[0]['*'];
                     var newContent = existingContent + requestText;
 
                     // Prepare the API request to save the updated content
                     var csrfUrl = 'https://commons.wikimedia.org/w/api.php?action=query&meta=tokens&type=edit&format=json';
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: csrfUrl,
-                        onload: function(csrfResponse) {
-                            var csrfData = JSON.parse(csrfResponse.responseText);
+                    return fetch(csrfUrl)
+                        .then(response => response.json())
+                        .then(csrfData => {
                             var csrfToken = csrfData.query.tokens.csrftoken;
                             var editUrl = 'https://commons.wikimedia.org/w/api.php';
                             var editData = {
@@ -57,27 +55,27 @@
                                 format: 'json'
                             };
 
-                            GM_xmlhttpRequest({
+                            return fetch(editUrl, {
                                 method: 'POST',
-                                url: editUrl,
-                                data: $.param(editData),
                                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                onload: function(editResponse) {
-                                    var result = JSON.parse(editResponse.responseText);
-                                    if (result.edit && result.edit.result === 'Success') {
-                                        // Construct the thank you message with a link to the request
-                                        var requestSection = encodeURIComponent(`[[:${fileName}]]`);
-                                        var thankYouMessage = `Undeleting request submitted (see the request [https://commons.wikimedia.org/wiki/${pageTitle}#${requestSection}]).`;
-                                        alert(thankYouMessage);
-                                    } else {
-                                        alert('Error adding the undeletion request.');
-                                    }
-                                }
+                                body: $.param(editData)
                             });
-                        }
-                    });
-                }
-            });
+                        })
+                        .then(editResponse => editResponse.json())
+                        .then(result => {
+                            if (result.edit && result.edit.result === 'Success') {
+                                // Construct the thank you message with a link to the request
+                                var requestSection = encodeURIComponent(`[[:${fileName}]]`);
+                                var thankYouMessage = `Undeleting request submitted (see the request [https://commons.wikimedia.org/wiki/${pageTitle}#${requestSection}]).`;
+                                alert(thankYouMessage);
+                            } else {
+                                alert('Error adding the undeletion request.');
+                            }
+                        });
+                })
+                .catch(error => {
+                    alert('Error occurred: ' + error.message);
+                });
         } else {
             alert('File name and ticket number are required!');
         }
@@ -97,10 +95,6 @@
         }
     }
 
-    // Only add the button if the user is in the "VRT permissions agents" group
-    if (isVRTAgent()) {
-        addButton();
-    } else {
-        console.log('VRTS Undeletion Request Helper is only available for VRT permissions agents.');
-    }
+    // Load jQuery and then add the button
+    loadjQuery(addButton);
 })();
