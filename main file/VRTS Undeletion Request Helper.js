@@ -37,6 +37,14 @@
         });
     }
 
+    // Function to show a warning notification
+    function showWarning() {
+        mw.notify('You are not a VRTS Agent. The script will work only for VRTS agents. Please contact a VRTS administrator if you believe this is an error.', {
+            title: 'Warning',
+            type: 'warn'
+        });
+    }
+
     // Function to prompt the user for input and submit the request
     function requestUndeletion() {
         // Prompt user for file name and ticket number
@@ -108,7 +116,7 @@
                     toolbar.appendChild(li);
                 }
             } else {
-                console.log('User is not a member of the vrt-permissions group.');
+                showWarning(); // Show warning if the user is not a member
             }
         });
     }
