@@ -37,8 +37,8 @@
 
         // Ensure both file name and ticket number are provided
         if (fileName && ticketNumber) {
-            // Format the undeletion request with placeholder for signature
-            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. ~~~~\n`;
+            // Format the undeletion request with <nowiki> tags around ~~~~
+            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. <nowiki>~~~~</nowiki>\n`;
 
             // Format the edit summary
             var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}).`;
@@ -54,7 +54,9 @@
                     var data = JSON.parse(response.responseText);
                     var page = data.query.pages[Object.keys(data.query.pages)[0]];
                     var existingContent = page.revisions[0]['*'];
-                    var newContent = existingContent + requestText;
+
+                    // Remove <nowiki> tags around ~~~~ before submitting
+                    var newContent = existingContent + requestText.replace(/<nowiki>/g, '').replace(/<\/nowiki>/g, '');
 
                     // Prepare the API request to save the updated content
                     var csrfUrl = 'https://commons.wikimedia.org/w/api.php?action=query&meta=tokens&type=edit&format=json';
