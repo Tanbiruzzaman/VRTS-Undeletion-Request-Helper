@@ -55,8 +55,11 @@
         console.log('File Name:', fileName);
         console.log('Ticket Number:', ticketNumber);
 
-        // Format the undeletion request with nowiki tag around the signature
-        var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].\n~~\n~~\n`;
+        // Format the undeletion request with placeholders for signature
+        var requestText = `\n== [[:${fileName}]] ==\n\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. ~~<nowiki>~~</nowiki>\n`;
+
+        // Replace <nowiki> tags with actual signature placeholder
+        requestText = requestText.replace(/<nowiki>~~<\/nowiki>/g, '~~');
 
         // Format the edit summary
         var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}). ([[User:Tanbiruzzaman/VRTS Undeletion Request Helper|VRTURH]])`;
