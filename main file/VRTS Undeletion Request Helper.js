@@ -37,7 +37,7 @@
 
         // Ensure both file name and ticket number are provided
         if (fileName && ticketNumber) {
-            // Format the undeletion request with <nowiki> tags around ~~~~
+            // Format the undeletion request with <nowiki> tags around signature
             var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. <nowiki>~~~~</nowiki>\n`;
 
             // Format the edit summary
@@ -55,7 +55,7 @@
                     var page = data.query.pages[Object.keys(data.query.pages)[0]];
                     var existingContent = page.revisions[0]['*'];
 
-                    // Remove <nowiki> tags around ~~~~ before submitting
+                    // Remove <nowiki> tags around signature before submitting
                     var newContent = existingContent + requestText.replace(/<nowiki>/g, '').replace(/<\/nowiki>/g, '');
 
                     // Prepare the API request to save the updated content
