@@ -37,8 +37,8 @@
 
         // Ensure both file name and ticket number are provided
         if (fileName && ticketNumber) {
-            // Format the undeletion request
-            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]].~~~~\n`;
+            // Format the undeletion request with placeholder for signature
+            var requestText = `== [[:${fileName}]] ==\n*[[File:Permission logo 2021.svg|26px|link=|VRTS]] Please restore the file for permission verification for [[Ticket:${ticketNumber}]]. ~~~~\n`;
 
             // Format the edit summary
             var editSummary = `Requesting undeletion of [[:${fileName}]] based on VRTS permission (Ticket: ${ticketNumber}).`;
