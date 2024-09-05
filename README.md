@@ -8,4 +8,4 @@ VRTS Undeletion Request Helper is a userscript for VRTS agents to undeletion req
 * to use, must provide file name & ticket number when asked.
 
 # Installation
-[https://commons.wikimedia.org/wiki/User:Tanbiruzzaman/VRTS_Undeletion_Request_Helper See the documention page] to install.
+[See the documention page](https://commons.wikimedia.org/wiki/User:Tanbiruzzaman/VRTS_Undeletion_Request_Helper) to install.
